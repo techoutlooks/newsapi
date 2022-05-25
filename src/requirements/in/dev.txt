@@ -1,0 +1,2 @@
+-r base.txt
+-e file:///Users/ceduth/Devl/Projects/Libs/daily-query

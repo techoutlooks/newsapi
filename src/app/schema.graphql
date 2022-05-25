@@ -1,0 +1,120 @@
+
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+
+
+
+
+
+type Mutation {
+    saveStats(stats: StatsInput!): [Post]
+}
+
+input StatsInput {
+    clicks: [ClickInput]
+}
+
+input ClickInput {
+    on: NameValueInput!
+}
+
+input NameValueInput {
+    name: String!
+    value: String!
+}
+
+
+
+
+
+
+
+type Query {
+    stats(from_date: String, to_date: String, first:Int, recursive:Boolean): Stats
+    post(post_id: String!, adjacent_docs_included: Int): Post
+    posts(type:String, post_ids:[String], days: String, days_from:String, days_to:String, first:Int): [Post]
+    tagCounts: [TagCount]
+    tags(filter: Object, fields: Object): [String]
+}
+
+type TagCount {
+    tag: String!
+    postCount: Int!
+}
+
+type Post {
+    id: ID!
+    country: String!
+    link: String!
+    short_link: String!
+    link_hash: String
+    type: String
+    title: String
+    text: String
+    excerpt: String
+    publish_time: String
+    modified_time: String
+    top_image: String
+    images: [String]
+    videos: [String]
+    authors: [Author]
+    keywords: [String]
+    tags: [String]
+    paper: Paper
+    version: Int
+    is_draft: Boolean
+    is_scrap: Boolean
+
+    siblings: [Post]
+    related: [Post]
+    category: String
+    caption: String
+    summary: String
+
+    previous: [Post]
+    next: [Post]
+
+    stats: Stats
+
+}
+
+
+type Author {
+    name: String
+    profile_image: String,
+    role: String
+}
+
+type Paper {
+    brand: String
+    description: String
+    logo_url: String
+}
+
+type SimilarTo {
+    id: ID!
+    score: Float
+}
+
+type Stats {
+    clicks: [Click]
+}
+
+type Click {
+    on: NameValue!
+}
+
+
+
+
+
+
+type NameValue {
+    name: String!
+    value: String!
+}
+
+scalar Object
