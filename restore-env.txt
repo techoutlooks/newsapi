@@ -1,0 +1,19 @@
+ariadne==0.13.0
+click==8.0.1
+-e git+https://github.com/techoutlooks/daily-query.git@107988df51f4618b1ab1cad0e8b7a538c11020d5#egg=daily_query
+Flask==2.0.1
+Flask-Cors==3.0.10
+Flask-PyMongo==2.3.0
+graphql-core==3.1.5
+itsdangerous==2.0.1
+Jinja2==3.0.1
+MarkupSafe==2.0.1
+ordered-set==4.1.0
+pep517==0.10.0
+pip-tools==6.1.0
+pymongo==3.11.4
+six==1.16.0
+starlette==0.14.2
+toml==0.10.2
+typing-extensions==3.10.0.0
+Werkzeug==2.0.1

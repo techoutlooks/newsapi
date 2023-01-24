@@ -1,4 +1,4 @@
-from app.utils import get_env_variable
+from daily_query.helpers import get_env_variable
 
 
 MONGO_URI = get_env_variable('MONGO_URI')

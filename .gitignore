@@ -1,7 +1,9 @@
-*.pyc
+src/instance/
 .idea/
 venv/
-src/.pytest_cache/
-__pycache__/*
-.DS_Store
+.pytest_cache/
 .coverage
+*.py[cod]
+*.egg-info/
+*.egg
+.DS_Store
