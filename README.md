@@ -4,6 +4,7 @@
 
 ```shell
 pip install -U pip pip-tools
+pip-compile --output-file=requirements/dev.txt --resolver=backtracking requirements/in/dev.txt
 ```
 
 ## Install Dependencies
