@@ -1,18 +1,45 @@
+import os.path
+
 import flask
-from ariadne import graphql_sync, make_executable_schema, load_schema_from_path, gql, load_schema
+from ariadne import graphql_sync, make_executable_schema, load_schema_from_path, gql, ObjectType
 from ariadne.constants import PLAYGROUND_HTML
 from flask import Blueprint
 
-# from app import app
-from app.posts.queries import query
-from app.posts.mutation import mutation
 
+# ObjectType instances mapping to schema's Query and Mutation.
+# will resolve dynamically, thanks to calling `load_schema()`
+query = None
+mutation = None
 
 graphql = Blueprint("graphql", __name__)
 
 
-type_defs = gql(load_schema_from_path("src/app/schema.graphql"))
-schema = make_executable_schema(type_defs, query, mutation)
+def load_schema(path: str):
+    """
+    Loads the schema dynamically, avoiding circular imports.
+    Reason? let the schema binding of type vs. resolvers be aware of
+    the resolver's code while initializing the query/mutation ObjectType
+    instances above. Read further in comments below.
+    https://ariadnegraphql.org/docs/resolvers.html
+    """
+
+    # set as globals to resolve import of `query` and `mutation` binders
+    # that are required by the modules imported next; namely the resolvers
+    # imported by app.posts, app.ezines
+    global query
+    global mutation
+    query = ObjectType("Query")
+    mutation = ObjectType("Mutation")
+
+    # binding resolvers to query/mutation types does not work properly if
+    # the resolver's definition are not read while binding
+    import app.posts
+    import app.ezines
+    type_defs = gql(load_schema_from_path(path))
+    return make_executable_schema(type_defs, query, mutation)
+
+
+schema = load_schema(f"{os.path.dirname(__file__)}/schema.graphql")
 
 
 @flask.current_app.route("/graphql", methods=["GET"])

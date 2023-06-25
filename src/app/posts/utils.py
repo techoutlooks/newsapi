@@ -62,10 +62,4 @@ def get_post_stats_for_action(post, action, recursive=True):
     return action_stats
 
 
-def format_post(post):
-    """ Format post raw db data. """
 
-    # convert `bson.ObjectId` to str
-    p = {'id': str(post['_id']), **post}
-    del p['_id']
-    return p

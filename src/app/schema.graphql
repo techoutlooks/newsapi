@@ -1,55 +1,73 @@
-
 schema {
-  query: Query
+  query: Query,
   mutation: Mutation
 }
 
-
-
-
-
-
 type Mutation {
-    saveStats(stats: StatsInput!): [Post]
+    doNothing: String!
 }
-
-input StatsInput {
-    clicks: [ClickInput]
-}
-
-input ClickInput {
-    on: NameValueInput!
-}
-
-input NameValueInput {
-    name: String!
-    value: String!
-}
-
-
-
-
 
 
 
 type Query {
-    stats(from_date: String, to_date: String, first:Int, recursive:Boolean): Stats
-    post(post_id: String!, adjacent_docs_included: Int): Post
-    posts(type:String, post_ids:[String], days: String, days_from:String, days_to:String, first:Int): [Post]
-    tagCounts: [TagCount]
-    tags(filter: Object, fields: Object): [String]
+
+    publisherMetrics    (
+        networks:[String], dimensions: [String], metrics: [String],
+        days: [String], days_from: String, days_to: String, limit: Int
+    ): Object
+
+    sportsSchedule(sport:String!, season:String, limit:Int): [SportEvent]
+
+    post(post_id: String!, adjacent: Int): Post
+
+    posts(type:String, countries:[String], categories:[String], post_ids:[String],
+          days: String, days_from:String, days_to:String,
+          limit:Int, adjacent: Int, has_videos:Boolean): [Post]
+
+    mostPublished(type:String, countries:[String], categories:[String], post_ids:[String],
+          days: String, days_from:String, days_to:String,
+          limit:Int, adjacent: Int, has_videos:Boolean): [DocStat]
+
+    mostOccurring(type:String, countries:[String], categories:[String], post_ids:[String],
+          days: String, days_from:String, days_to:String,
+          limit:Int, adjacent: Int, has_videos:Boolean): [DocStat]
+
+    categories(match: Object, fields: Object, limit:Int): [String]
+    tags(match: Object, fields: Object, limit:Int): [String]
+
+    countriesCounts(limit:Int): [DocStat]
+
+    categoriesCounts(type:String, countries:[String], categories: [String],
+        days: String, days_from:String, days_to:String, limit:Int has_videos: Boolean): [DocStat]
+
+    tagsCounts(type:String, countries:[String], categories: [String],
+        days: String, days_from:String, days_to:String, limit:Int has_videos: Boolean): [DocStat]
 }
 
-type TagCount {
-    tag: String!
-    postCount: Int!
+
+
+type SportEvent {
+    sport: String
+    event: String
+    season: String
+    league: String
+    venue: String
+    time: String
+    city: String
+    country: String
+    status: String
+    postponed: String
+    thumb: String
+    home_team: String
+    away_team: String
 }
+
 
 type Post {
     id: ID!
     country: String!
-    link: String!
-    short_link: String!
+    link: String
+    short_link: String
     link_hash: String
     type: String
     title: String
@@ -64,7 +82,7 @@ type Post {
     keywords: [String]
     tags: [String]
     paper: Paper
-    version: Int
+    version: String
     is_draft: Boolean
     is_scrap: Boolean
 
@@ -77,10 +95,7 @@ type Post {
     previous: [Post]
     next: [Post]
 
-    stats: Stats
-
 }
-
 
 type Author {
     name: String
@@ -94,27 +109,22 @@ type Paper {
     logo_url: String
 }
 
-type SimilarTo {
-    id: ID!
-    score: Float
-}
 
-type Stats {
-    clicks: [Click]
-}
-
-type Click {
-    on: NameValue!
-}
-
-
-
-
-
-
-type NameValue {
+type DocStat {
     name: String!
     value: String!
+    doc: Object
 }
+
+
+type Country {
+    country_name: String!
+    timezone:String!
+    currency:String!
+    languages:[String]!
+    postCount: Int!
+}
+
+
 
 scalar Object

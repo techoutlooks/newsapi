@@ -1,17 +1,49 @@
-from ariadne import ObjectType, convert_kwargs_to_snake_case
+from ariadne import convert_kwargs_to_snake_case
 from bson import ObjectId
 
 from app.posts.constants import POST_STATS_FIELD
-from app.posts.queries import format_post
+from app.posts.queries import format_doc
 from app.posts.utils import parse_post_url
 from app.database import get_db, engine
+from app.routes import mutation
 
 db = get_db()
 
-mutation = ObjectType("Mutation")
 
 
-@mutation.field("saveStats")
+# FIXME: delete, obsolete: not posting here from service workers anymore
+#   using global script.
+
+# schema {
+#   query: Query
+#   # mutation: Mutation
+# }
+
+# type Mutation {
+#     saveStats(stats: StatsInput!): [Post]
+# }
+#
+# input StatsInput {
+#     clicks: [ClickInput]
+# }
+#
+# input ClickInput {
+#     on: NameValueInput!
+# }
+#
+# input NameValueInput {
+#     name: String!
+#     value: String!
+# }
+#
+
+@mutation.field("doNothing")
+@convert_kwargs_to_snake_case
+def resolve_do_nothing(*_,):
+    return 'doing nothing...yet!'
+
+
+# @mutation.field("saveStats")
 @convert_kwargs_to_snake_case
 def resolve_save_stats(*_, stats=None):
     """
@@ -47,7 +79,7 @@ def resolve_save_stats(*_, stats=None):
             )
 
             # result
-            posts.append(format_post(post))
+            posts.append(format_doc(post))
 
     # save other posts stats
     # ...

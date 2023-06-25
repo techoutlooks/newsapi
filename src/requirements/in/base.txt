@@ -1,4 +1,7 @@
+environs
 ariadne==0.13.0
 Flask==2.0.1
 Flask-PyMongo==2.3.0
 Flask-Cors==3.0.10
+pytz==2022.1
+Babel==2.10.3
