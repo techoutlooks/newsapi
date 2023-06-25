@@ -11,7 +11,12 @@ type Mutation {
 
 type Query {
 
-    schedule(sport:String!, season:String, limit:Int): [SportEvent]
+    publisherMetrics    (
+        networks:[String], dimensions: [String], metrics: [String],
+        days: [String], days_from: String, days_to: String, limit: Int
+    ): Object
+
+    sportsSchedule(sport:String!, season:String, limit:Int): [SportEvent]
 
     post(post_id: String!, adjacent: Int): Post
 
@@ -77,7 +82,7 @@ type Post {
     keywords: [String]
     tags: [String]
     paper: Paper
-    version: Int
+    version: String
     is_draft: Boolean
     is_scrap: Boolean
 

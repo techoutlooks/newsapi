@@ -33,7 +33,7 @@ class SportSchedule(Collection):
         self.season = season
 
 
-@query.field("schedule")
+@query.field("sportsSchedule")
 @convert_kwargs_to_snake_case
 def resolve_schedule(*_, sport, season=None, limit=FETCH_BATCH):
     """

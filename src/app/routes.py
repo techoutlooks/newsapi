@@ -1,7 +1,7 @@
 import os.path
 
 import flask
-from ariadne import graphql_sync, make_executable_schema, load_schema_from_path, gql, load_schema, ObjectType, QueryType
+from ariadne import graphql_sync, make_executable_schema, load_schema_from_path, gql, ObjectType
 from ariadne.constants import PLAYGROUND_HTML
 from flask import Blueprint
 

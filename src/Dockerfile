@@ -1,3 +1,6 @@
+# Push to local kind-registry:
+# export REGISTRY=localhost:5001 TAG=v1
+# docker build . -t $REGISTRY/newsapi:$TAG && docker push $REGISTRY/newsapi:$TAG
 FROM python:3.9
 
 RUN mkdir -p /flask-app
@@ -15,8 +18,11 @@ RUN python -m piptools sync
 # Run flask app
 EXPOSE 5000
 ENV FLASK_APP="app" FLASK_DEBUG=1 FLASK_ENV=docker
-CMD ["flask", "run", "-h", "0.0.0.0"]
 
+# Development
+#CMD ["flask", "run", "-h", "0.0.0.0"]
 
-## start the uvicorn server on $PORT variable
-#CMD exec uvicorn routes:app --host 0.0.0.0 --port $PORT
+# Production
+# https://flask.palletsprojects.com/en/2.3.x/deploying/gunicorn/
+#CMD gunicorn -w 4 -b 0.0.0.0:5000 'app:create_app()'
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app.run:app"]

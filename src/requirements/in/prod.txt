@@ -1,3 +1,4 @@
 -r base.txt
 git+https://github.com/techoutlooks/daily-query.git
 dnspython==2.2.1
+gunicorn

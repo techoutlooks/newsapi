@@ -1,5 +1,4 @@
 from collections import defaultdict
-from functools import reduce
 from itertools import chain
 from typing import Union, Literal, Callable, List, Tuple
 
@@ -18,11 +17,9 @@ from app.posts.constants import \
     VALUE_FIELD, NAME_FIELD, POST_FETCH_LIMIT
 from app.posts.utils import get_post_stats_for_action
 from app.routes import query
+from app.utils import compose
 
 from app.utils.agg import Aggregate as Agg
-
-
-compose = lambda *fns: reduce(lambda f, g: lambda t: f(g(t)), fns)
 
 
 @query.field("mostPublished")
@@ -31,8 +28,9 @@ def resolve_most_published(
         *_, similarity: Literal['siblings', 'related'] = POST_SIBLINGS_FIELD,
         **kwargs):
     """
-    Count/Posts that harnessed interest across newspapers.
-    Obtained by counting the number of similar stories(`sibling`, `related` posts)
+    Most ranking posts by number of similar stories published.
+
+    Obtained by counting the number of similar stories (`sibling`, `related` posts)
     published about every post (using a GROUP_BY).
     """
 
@@ -80,10 +78,10 @@ def resolve_most_occurring(
         *_, similarity: Literal['siblings', 'related'] = POST_SIBLINGS_FIELD,
         **kwargs):
     """
-    Most occurring publications by newspapers.
+    Count/Posts that harnessed the more interest across newspapers.
     Most occurring siblings/related posts that generated other posts
-    Count/posts that share a similarity with any other
-    post within the scope of a given day (remember: similarity is computed daily)
+    Count/posts that share a similarity with any other post,
+    within the scope of a given day (remember: similarity is computed daily)
 
     Obtained by taking the intersection of all `siblings` or `related` fields
     (so typically won't yield metaposts) that contain any given post, then rank by count.
@@ -188,7 +186,7 @@ def resolve_stats(*_, from_date=None, to_date=None, limit=None, recursive=False)
 @convert_kwargs_to_snake_case
 def resolve_post(*_, post_id=None, adjacent=1):
     """
-    Find the given post across across all collections (days).
+    Find the given post across all collections (days).
     Embeds #adjacent_posts previous/next posts.
     :param adjacent: number of previous/next posts to insert
     :param post_id:
@@ -221,7 +219,7 @@ def resolve_posts(*_, **kwargs):
     List of posts across all collections matching given criteria.
     """
     post_filter = mkfilter(kwargs)
-    if not post_filter:
+    if post_filter is None:
         return []
     posts = list(search_posts(match=post_filter, **kwargs))
     return posts
@@ -393,17 +391,17 @@ def expand_doc(doc: Doc, related_fields: Tuple[str], adjacent_fields: Tuple[str]
 
 def mkfilter(kwargs):
     """
-    Generate a MongoDB query filter from kwargs
+    Generate a MongoDB posts query filter from kwargs
     # TODO: typings for kwargs
     """
 
     post_filter = {}
 
     # https://stackoverflow.com/a/52018277
-    type_ = kwargs.pop('type', None)
-    if type_:
+    post_type = kwargs.pop('type', None)
+    if post_type:
         post_filter.update({'type': {
-            '$regex': f'{type_}', '$options': 'i'}})
+            '$regex': f'{post_type}', '$options': 'i'}})
 
     has_videos = kwargs.pop('has_videos', None)
     if has_videos:
@@ -461,7 +459,7 @@ def agg_post_sum(by: Agg.GroupBy, sum_by: Agg.SumBy = Agg.SumBy.count, **kwargs)
 
     unwind, relation = Agg.extract_fields(by)
 
-    match = mkfilter(kwargs)
+    match = mkfilter(kwargs)    # <- FIXME: this alters kwargs. is desirable?
     match_filter = [{"$match": match}] if match else []
 
     # following list fields must be unwinded first

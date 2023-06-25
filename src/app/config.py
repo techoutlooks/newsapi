@@ -1,7 +1,4 @@
-from daily_query.helpers import get_env_variable
-
-
-MONGO_URI = get_env_variable('MONGO_URI')
+from app.utils import get_env
 
 
 class Config(object):
@@ -9,7 +6,7 @@ class Config(object):
     TESTING = False
 
     # SQLAlchemy
-    MONGO_URI = MONGO_URI
+    MONGO_URI = get_env('MONGO_URI')
 
     # Silence the deprecation warning
     SQLALCHEMY_TRACK_MODIFICATIONS = False

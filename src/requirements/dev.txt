@@ -12,6 +12,8 @@ babel==2.10.3
     # via -r requirements/in/base.txt
 click==8.0.1
     # via flask
+environs==9.5.0
+    # via -r requirements/in/base.txt
 flask==2.0.1
     # via
     #   -r requirements/in/base.txt
@@ -29,12 +31,18 @@ jinja2==3.0.1
     # via flask
 markupsafe==2.0.1
     # via jinja2
+marshmallow==3.19.0
+    # via environs
 ordered-set==4.1.0
     # via daily-query
+packaging==23.1
+    # via marshmallow
 pymongo==3.11.4
     # via
     #   daily-query
     #   flask-pymongo
+python-dotenv==1.0.0
+    # via environs
 pytz==2022.1
     # via
     #   -r requirements/in/base.txt
