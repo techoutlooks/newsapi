@@ -10,6 +10,8 @@
 ```shell
 docker run -d -p 27017:27017 --name mongodb \
   -v pgdata:/var/lib/postgresql/data \
+#  -e MONGO_INITDB_ROOT_USERNAME=techu \
+#  -e MONGO_INITDB_ROOT_PASSWORD=techu0910! \
   mongo:latest
 ```
 

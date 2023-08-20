@@ -1,6 +1,6 @@
 from collections import defaultdict
 from itertools import chain
-from typing import Union, Literal, Callable, List, Tuple
+from typing import Iterable, Literal, Callable, Tuple
 
 import pytz as pytz
 from ariadne import convert_kwargs_to_snake_case
@@ -13,8 +13,8 @@ from daily_query.base import Doc
 from app.database import engine
 from app.posts.constants import \
     POST_SIBLINGS_FIELD, POST_RELATED_FIELD, POST_PREVIOUS_FIELD, POST_NEXT_FIELD, \
-    POST_ACTIONS, POST_TYPE, \
-    VALUE_FIELD, NAME_FIELD, POST_FETCH_LIMIT
+    POST_TYPE_FIELD, POST_IS_META_FIELD, VALUE_FIELD, NAME_FIELD, \
+    POST_ACTIONS, POST_FETCH_LIMIT, METAPOST
 from app.posts.utils import get_post_stats_for_action
 from app.routes import query
 from app.utils import compose
@@ -65,7 +65,7 @@ def resolve_most_published(
             f"{VALUE_FIELD}": {"$sum": 1}}},
         {"$project": {
             "_id": "$_id._id", f"{VALUE_FIELD}": 1,
-            "doc": "$_id" }}
+            "doc": "$_id"}}
     ]
 
     return agg_sum_to_schema(
@@ -132,6 +132,7 @@ def resolve_countries_counts(*_, **kwargs):
     """
     Ordered mapping of post counts for each tag
     """
+
     def mk_country(count):
         # FIXME: once refactored newsbot: pycountry -> python-babel,
         #  then must have country code ==  locale.territory
@@ -272,8 +273,8 @@ def search_posts(
     """
 
     for post in engine.search(
-        flatten=True, limit=limit, match=match, fields=fields, exclude=exclude,
-        days=days, days_from=days_from, days_to=days_to
+            flatten=True, limit=limit, match=match, fields=fields, exclude=exclude,
+            days=days, days_from=days_from, days_to=days_to
     ):
         yield expand_post(post, adjacent)
 
@@ -283,7 +284,7 @@ def expand_post(doc: Doc, adjacent=1):
     Replace:
         { "siblings": [{"_id": <doc_id>, "score": <similarity_score>}, ...]}
         { "related": [{"_id": <doc_id>, "score": <similarity_score>}, ...]}
-    with:
+    with actual post
 
     """
     if not doc:
@@ -292,11 +293,11 @@ def expand_post(doc: Doc, adjacent=1):
     related_fields = POST_SIBLINGS_FIELD, POST_RELATED_FIELD
     adjacent_fields = POST_PREVIOUS_FIELD, POST_NEXT_FIELD
 
-    return expand_doc(doc, related_fields, adjacent_fields, adjacent, fmt_func=format_doc)
+    return expand_doc(doc, related_fields, adjacent_fields, adjacent)
 
 
 def expand_doc(doc: Doc, related_fields: Tuple[str], adjacent_fields: Tuple[str],
-               adjacent=1, fmt_func: Callable = None):
+               adjacent=1):
     """
     Expands in-place docs relations and adjacencies.
 
@@ -319,9 +320,6 @@ def expand_doc(doc: Doc, related_fields: Tuple[str], adjacent_fields: Tuple[str]
     if not doc:
         return
 
-    _format_doc = lambda d: d \
-        if not callable(fmt_func) else fmt_func(d)
-
     def _drop_relations(d: Doc):
         for x in related_fields:
             del d[x]
@@ -331,18 +329,21 @@ def expand_doc(doc: Doc, related_fields: Tuple[str], adjacent_fields: Tuple[str]
         """
         Expand in-place list [{"_id": <ObjectId>, ..}, ...] of related docs
         into full docs from same collection.
+        Also inserts similarity scores with the `to` doc (`score` field).
         """
         for rel in related_fields:
             try:
-                rel_docs = list(to.collection.find({
-                    "_id": {"$in": list(map(lambda x: x["_id"], to[rel]))}, }))
+                rel_docs = to.collection.find({
+                    "_id": {"$in": list(map(lambda x: x["_id"], to[rel]))}, })
 
                 # do NOT recurse, instead, drop the related fields
                 # on expanded doc for every relation
-                rel_docs = list(map(_drop_relations, rel_docs))
+                rel_docs = map(_drop_relations, rel_docs)
 
-                # optionally apply format func to expanded docs
-                to[rel] = list(map(_format_doc, rel_docs))
+                # apply format func to expanded docs
+                # inserts the similarity score with the mother post
+                rel_scores = map(lambda x: {"score": x["score"]}, to[rel])
+                to[rel] = list(map(lambda x: format_doc(x[0], update=x[1]), zip(rel_docs, rel_scores)))
             except KeyError:
                 to[rel] = []
         return to
@@ -367,14 +368,14 @@ def expand_doc(doc: Doc, related_fields: Tuple[str], adjacent_fields: Tuple[str]
                  '_id': {op: to.data["_id"]}}
 
             lookups = ({'op': '$lt', 'sort': [('_id', -1)]},
-                      {'op': '$gt', 'sort': [('_id', 1)]})
+                       {'op': '$gt', 'sort': [('_id', 1)]})
 
             adj_docs = []
             for lookup in lookups:
-                lookup_docs = to.collection.find(_mkfilter(lookup['op']))\
+                lookup_docs = to.collection.find(_mkfilter(lookup['op'])) \
                     .sort(lookup['sort']).limit(count)
                 adj_docs += [list(map(compose(
-                    _format_doc, _drop_relations), lookup_docs))]
+                    format_doc, _drop_relations), lookup_docs))]
 
             previous_docs, next_docs = adj_docs
             previous_field, next_field = adjacent_fields
@@ -384,9 +385,9 @@ def expand_doc(doc: Doc, related_fields: Tuple[str], adjacent_fields: Tuple[str]
     # patch doc with relation fields exploded,
     # patch doc with `adjacent` adjacent docs within collection,
     _expand_relations(doc)
-    _expand_adjacent(doc, doc[POST_TYPE], adjacent)
+    _expand_adjacent(doc, doc[POST_TYPE_FIELD], adjacent)
 
-    return _format_doc(doc)
+    return format_doc(doc)
 
 
 def mkfilter(kwargs):
@@ -459,7 +460,7 @@ def agg_post_sum(by: Agg.GroupBy, sum_by: Agg.SumBy = Agg.SumBy.count, **kwargs)
 
     unwind, relation = Agg.extract_fields(by)
 
-    match = mkfilter(kwargs)    # <- FIXME: this alters kwargs. is desirable?
+    match = mkfilter(kwargs)  # <- FIXME: this alters kwargs. is desirable?
     match_filter = [{"$match": match}] if match else []
 
     # following list fields must be unwinded first
@@ -484,7 +485,7 @@ def agg_post_sum(by: Agg.GroupBy, sum_by: Agg.SumBy = Agg.SumBy.count, **kwargs)
         {"$group": {
             "_id": f"${by.value}",
             f"{VALUE_FIELD}": {"$sum": 1 if sum_by == Agg.SumBy.count
-                                else f"${sum_by.value}"}
+            else f"${sum_by.value}"}
         }},
         *inflate_doc(collection),
         {"$sort": {f"{VALUE_FIELD}": -1}},
@@ -510,7 +511,7 @@ def exec_agg_sum_pipeline(pipeline, **kwargs):
         if by_value:
             results[by_value]["sum"] += count
             if "doc" in row:
-                results[by_value]["doc"] = Doc(collection, row['doc']) # noqa
+                results[by_value]["doc"] = Doc(collection, row['doc'])  # noqa
 
     # fix for ranking by value DESC across the entire dataset (all collections),
     # since the pipeline's $sort does this only per collection
@@ -546,14 +547,28 @@ def agg_sum_to_schema(by, sum_by=Agg.SumBy.count, agg_sum=agg_post_sum, gql_subf
     return results
 
 
-def format_doc(post, delete_fields=[]):
-    """ Format post raw db data. """
+def format_doc(post, update=None, exclude=None) -> dict:
+    """
+    Format post raw database data in-place for use by frontends
+    - replaces database's `bson.ObjectId` with str `id` field
+    - insert the `is_meta` boolean that tells whether is a metapost
 
-    # convert `bson.ObjectId` to str
-    p = {'id': str(post['_id']), **post}
-    del p['_id']
+    :param Doc post: post data
+    :param dict update: additional data
+    :param Iterable[str] exclude: fields to remove
+    """
+    post['id'] = str(post['_id'])
+    del post['_id']
 
-    for f in delete_fields:
-        del p[f]
+    post[POST_IS_META_FIELD] = post[POST_TYPE_FIELD].startswith(METAPOST)
 
-    return p
+    if update:
+        assert isinstance(update, dict), "`update` must be dict"
+        post.update(update)
+
+    if exclude:
+        for f in exclude:
+            del post[f]
+
+    # make Doc object json-serializable
+    return dict(post)

@@ -16,7 +16,7 @@ Optional, do once per project.
     ```shell
     
     # newsbot 
-    CRAWL_DB_URI='mongodb+srv://techu:techu0910!@cluster0.6we1byk.mongodb.net/scraped_news_db?retryWrites=true&w=majority'
+    DB_URI='mongodb+srv://techu:techu0910!@cluster0.6we1byk.mongodb.net/scraped_news_db?retryWrites=true&w=majority'
     
     # gcloud
     REGION=europe-west1

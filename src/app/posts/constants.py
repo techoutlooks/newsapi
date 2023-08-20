@@ -10,8 +10,11 @@ POST_RELATED_FIELD = "related"
 POST_PREVIOUS_FIELD = 'previous'
 POST_NEXT_FIELD = 'next'
 POST_STATS_FIELD = 'stats'
-POST_TYPE = 'type'
+POST_TYPE_FIELD = 'type'
+POST_IS_META_FIELD = 'is_meta'
 
+
+METAPOST = 'metapost'
 POST_ACTIONS = ["clicks"]
 
 

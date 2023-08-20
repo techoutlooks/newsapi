@@ -85,7 +85,9 @@ type Post {
     version: String
     is_draft: Boolean
     is_scrap: Boolean
+    is_meta: Boolean
 
+    score: Float
     siblings: [Post]
     related: [Post]
     category: String
