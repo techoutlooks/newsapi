@@ -87,7 +87,7 @@ type Post {
     is_scrap: Boolean
     is_meta: Boolean
 
-    score: Float
+    score: Score
     siblings: [Post]
     related: [Post]
     category: String
@@ -127,6 +127,13 @@ type Country {
     postCount: Int!
 }
 
+
+type Score {
+    similarity: Float
+    caption: Float
+    summary: Float
+    category: Float
+}
 
 
 scalar Object

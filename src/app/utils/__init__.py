@@ -1,8 +1,12 @@
+from copy import deepcopy
 from functools import reduce
 from environs import Env
 
 
-__all__ = ('compose', 'get_env')
+__all__ = (
+    "compose", "setdict", "deepmerge",
+    "get_env",
+)
 
 
 # `read_env()` is to allow reading from .env file
@@ -11,6 +15,34 @@ env.read_env()
 
 
 compose = lambda *fns: reduce(lambda f, g: lambda t: f(g(t)), fns)
+
+
+def setdict(d, path, value):
+    """
+     Set dict's nested attribute without messing with sibling keys.
+    TODO: reframe to use reducer
+    """
+    dd = d
+    keys = path.split('.')
+    latest = keys.pop()
+    for k in keys:
+        dd = dd.setdefault(k, {})
+    dd[latest] = value
+
+
+def deepmerge(a: dict, b: dict, inplace=False) -> dict:
+    """
+    https://gist.github.com/angstwad/bf22d1822c38a92ec0a9?permalink_comment_id=4038517#gistcomment-4038517
+    """
+
+    result = a if inplace else deepcopy(a)
+    for bk, bv in b.items():
+        av = result.get(bk)
+        if isinstance(av, dict) and isinstance(bv, dict):
+            result[bk] = deepmerge(av, bv)
+        else:
+            result[bk] = deepcopy(bv)
+    return result
 
 
 def get_env(name, *args, coerce=None) -> str:

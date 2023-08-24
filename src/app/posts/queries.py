@@ -14,10 +14,10 @@ from app.database import engine
 from app.posts.constants import \
     POST_SIBLINGS_FIELD, POST_RELATED_FIELD, POST_PREVIOUS_FIELD, POST_NEXT_FIELD, \
     POST_TYPE_FIELD, POST_IS_META_FIELD, VALUE_FIELD, NAME_FIELD, \
-    POST_ACTIONS, POST_FETCH_LIMIT, METAPOST
+    POST_ACTIONS, POST_FETCH_LIMIT, METAPOST, POST_SCORE
 from app.posts.utils import get_post_stats_for_action
 from app.routes import query
-from app.utils import compose
+from app.utils import compose, deepmerge
 
 from app.utils.agg import Aggregate as Agg
 
@@ -296,7 +296,7 @@ def expand_post(doc: Doc, adjacent=1):
     return expand_doc(doc, related_fields, adjacent_fields, adjacent)
 
 
-def expand_doc(doc: Doc, related_fields: Tuple[str], adjacent_fields: Tuple[str],
+def expand_doc(doc: Doc, related_fields: Tuple[str], adjacent_fields: Tuple[str, str],
                adjacent=1):
     """
     Expands in-place docs relations and adjacencies.
@@ -341,8 +341,8 @@ def expand_doc(doc: Doc, related_fields: Tuple[str], adjacent_fields: Tuple[str]
                 rel_docs = map(_drop_relations, rel_docs)
 
                 # apply format func to expanded docs
-                # inserts the similarity score with the mother post
-                rel_scores = map(lambda x: {"score": x["score"]}, to[rel])
+                # inserts similarity score of related doc with the mother post
+                rel_scores = map(lambda x: {POST_SCORE: {"similarity": x["score"]}}, to[rel])
                 to[rel] = list(map(lambda x: format_doc(x[0], update=x[1]), zip(rel_docs, rel_scores)))
             except KeyError:
                 to[rel] = []
@@ -564,7 +564,7 @@ def format_doc(post, update=None, exclude=None) -> dict:
 
     if update:
         assert isinstance(update, dict), "`update` must be dict"
-        post.update(update)
+        deepmerge(post,  update, inplace=True)
 
     if exclude:
         for f in exclude:
